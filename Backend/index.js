@@ -1,35 +1,33 @@
-import express from 'express';
+import express, { json } from 'express';
 import dotenv from 'dotenv';
-import { connect } from 'mongoose';
+import path from 'path';
 import { connectDB } from './config/db.js';
+import productRoute from './routes/product.route.js';
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 5001;
+
+const __dirname = path.resolve();
+
 app.use(express.json());//allows us to accept json data in the body
 
+app.use('/api/products', productRoute);
 
-app.post('/api/products', async (req, res) => {
-    const product = req.body; // user will send this data
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '/Frontend/dist')));
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, 'Frontend', 'dist', 'index.html'));
+    });
 
-    if (!product.name && !product.price && !product.image) {
-        return res.status(400).json({ success: false, message: 'All fields are required' });
-    }
 
-    const newProduct = new Product(product)
-    try {
-        await newProduct.save();
-        res.status(201).json({ success: true, data: newProduct });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Internal server error' });
-    }
-
-});
+}
 
 
 
-app.listen(5001, () => {
+app.listen(PORT, () => {
     connectDB();
-    console.log('server started on http://localhost:5001');
+    console.log('server started on http://localhost:' + PORT);
 });
 
